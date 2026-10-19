@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://sites.google.com");
+  next();
+});<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
