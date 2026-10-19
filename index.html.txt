@@ -805,4 +805,50 @@ document.getElementById('mic-btn').style.color = '#ef4444';
 }
 </script>
 </body>
-</html>
+</html>// Function to fetch a random fact from a free public API
+async function fetchFunFact() {
+    try {
+        const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random');
+        const data = await res.json();
+        return data.text;
+    } catch (error) {
+        return "Sorry, I couldn't fetch a fact right now!";
+    }
+}
+
+// Updated sendMessage function using the free API
+async function sendMessage() {
+    const inputField = document.getElementById('user-input');
+    const query = inputField.value.trim();
+    if (!query) return;
+
+    const chat = getCurrentChat();
+
+    // 1. Add User Message
+    chat.messages.push({ sender: 'user', text: query });
+    inputField.value = '';
+    renderMessages();
+
+    // 2. Show Typing Indicator
+    showTypingIndicator();
+
+    let reply = "";
+    const text = query.toLowerCase();
+
+    // 3. Check what the user asked
+    if (text.includes('fact') || text.includes('tell me something') || text.includes('trivia')) {
+        reply = await fetchFunFact();
+    } else if (text.includes('hello') || text.includes('hi')) {
+        reply = "Hello! How can Knox AI help you today?";
+    } else if (text.includes('name') || text.includes('who are you')) {
+        reply = "I am Knox AI, your smart web assistant!";
+    } else {
+        reply = "That's an interesting question! I am running on a free setup right now, so try asking me to tell you a 'fact'!";
+    }
+
+    // 4. Remove Typing Indicator & Add AI Reply
+    removeTypingIndicator();
+    chat.messages.push({ sender: 'ai', text: reply });
+    saveState();
+    renderMessages();
+}
