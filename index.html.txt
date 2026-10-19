@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knox AI - Smart Assistant</title>
+<!-- Google Fonts & Font Awesome Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+--bg-primary: #0a0c10;
+--bg-secondary: #12161f;
+--bg-card: #1a202c;
+--bg-hover: #242c3d;
+--accent: #6366f1;
+--accent-hover: #4f46e5;
+--accent-glow: rgba(99, 102, 241, 0.25);
+--text-main: #f8fafc;
+--text-muted: #94a3b8;
+--border-color: rgba(255, 255, 255, 0.08);
+--sidebar-width: 280px;
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: 'Plus Jakarta Sans', sans-serif;
+-webkit-tap-highlight-color: transparent;
+}
+
+body {
+background-color: var(--bg-primary);
+color: var(--text-main);
+display: flex;
+height: 100vh;
+overflow: hidden;
+}
+
+/* Sidebar Styles */
+aside {
+width: var(--sidebar-width);
+background-color: var(--bg-secondary);
+border-right: 1px solid var(--border-color);
+display: flex;
+flex-direction: column;
+transition: all 0.3s ease;
+z-index: 100;
+}
+
+.sidebar-header {
+padding: 20px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+border-bottom: 1px solid var(--border-color);
+}
+
+.brand {
+display: flex;
+align-items: center;
+gap: 12px;
+font-weight: 700;
+font-size: 1.25rem;
+color: var(--text-main);
+}
+
+.brand i {
+color: var(--accent);
+font-size: 1.5rem;
+}
+
+.new-chat-btn {
+margin: 15px 20px;
+padding: 12px;
+background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+color: white;
+border: none;
+border-radius: 10px;
+font-weight: 600;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+box-shadow: 0 4px 15px var(--accent-glow);
+transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.new-chat-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.chat-history {
+flex: 1;
+overflow-y: auto;
+padding: 10px 15px;
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.history-item {
+padding: 10px 14px;
+border-radius: 8px;
+color: var(--text-muted);
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: space-between;
+font-size: 0.9rem;
+transition: all 0.2s;
+}
+
+.history-item:hover, .history-item.active {
+background-color: var(--bg-card);
+color: var(--text-main);
+}
+
+.history-item .title {
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+flex: 1;
+}
+
+.history-item .delete-btn {
+opacity: 0;
+color: #ef4444;
+padding: 4px;
+transition: opacity 0.2s;
+}
+
+.history-item:hover .delete-btn {
+opacity: 1;
+}
+
+.sidebar-footer {
+padding: 15px 20px;
+border-top: 1px solid var(--border-color);
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+.setting-control {
+display: flex;
+justify-content: space-between;
+align-items: center;
+font-size: 0.85rem;
+color: var(--text-muted);
+}
+
+select {
+background: var(--bg-card);
+color: var(--text-main);
+border: 1px solid var(--border-color);
+padding: 6px 10px;
+border-radius: 6px;
+outline: none;
+}
+
+/* Main Chat Container */
+main {
+flex: 1;
+display: flex;
+flex-direction: column;
+height: 100vh;
+position: relative;
+}
+
+header {
+padding: 15px 25px;
+border-bottom: 1px solid var(--border-color);
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: rgba(10, 12, 16, 0.8);
+backdrop-filter: blur(10px);
+}
+
+.menu-toggle {
+display: none;
+background: none;
+border: none;
+color: var(--text-main);
+font-size: 1.2rem;
+cursor: pointer;
+}
+
+#chat-window {
+flex: 1;
+overflow-y: auto;
+padding: 25px;
+display: flex;
+flex-direction: column;
+gap: 20px;
+scroll-behavior: smooth;
+}
+
+.message {
+display: flex;
+gap: 15px;
+max-width: 800px;
+width: 100%;
+margin: 0 auto;
+animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+flex-direction: row-reverse;
+}
+
+.avatar {
+width: 38px;
+height: 38px;
+border-radius: 10px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 700;
+flex-shrink: 0;
+}
+
+.user .avatar {
+background: #3b82f6;
+color: white;
+}
+
+.ai .avatar {
+background: var(--accent);
+color: white;
+box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.content {
+background: var(--bg-card);
+padding: 14px 18px;
+border-radius: 14px;
+border: 1px solid var(--border-color);
+line-height: 1.6;
+font-size: 0.95rem;
+position: relative;
+max-width: 85%;
+}
+
+.user .content {
+background: var(--accent);
+border-color: transparent;
+border-bottom-right-radius: 2px;
+}
+
+.ai .content {
+border-bottom-left-radius: 2px;
+}
+
+.msg-tools {
+display: flex;
+gap: 10px;
+margin-top: 8px;
+font-size: 0.8rem;
+color: var(--text-muted);
+justify-content: flex-end;
+}
+
+.msg-tools i {
+cursor: pointer;
+transition: color 0.2s;
+}
+
+.msg-tools i:hover {
+color: var(--text-main);
+}
+
+/* Typing Indicator */
+.typing {
+display: flex;
+gap: 5px;
+padding: 10px;
+align-items: center;
+}
+
+.dot {
+width: 8px;
+height: 8px;
+background: var(--text-muted);
+border-radius: 50%;
+animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+0%, 80%, 100% { transform: scale(0); }
+40% { transform: scale(1); }
+}
+
+/* Input Controls Area */
+.input-container {
+padding: 20px 25px;
+background: var(--bg-primary);
+border-top: 1px solid var(--border-color);
+max-width: 850px;
+width: 100%;
+margin: 0 auto;
+}
+
+.quick-pills {
+display: flex;
+gap: 8px;
+overflow-x: auto;
+padding-bottom: 12px;
+scrollbar-width: none;
+}
+
+.quick-pills::-webkit-scrollbar { display: none; }
+
+.pill {
+background: var(--bg-card);
+border: 1px solid var(--border-color);
+color: var(--text-muted);
+padding: 6px 14px;
+border-radius: 20px;
+font-size: 0.82rem;
+white-space: nowrap;
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.pill:hover {
+background: var(--bg-hover);
+color: var(--text-main);
+border-color: var(--accent);
+}
+
+.input-box {
+display: flex;
+align-items: center;
+background: var(--bg-card);
+border: 1px solid var(--border-color);
+border-radius: 12px;
+padding: 8px 12px;
+transition: border-color 0.2s;
+}
+
+.input-box:focus-within {
+border-color: var(--accent);
+}
+
+textarea {
+flex: 1;
+background: transparent;
+border: none;
+color: var(--text-main);
+padding: 8px;
+font-size: 0.95rem;
+resize: none;
+height: 24px;
+max-height: 120px;
+outline: none;
+}
+
+.action-btn {
+background: transparent;
+border: none;
+color: var(--text-muted);
+width: 36px;
+height: 36px;
+border-radius: 8px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+}
+
+.action-btn:hover {
+color: var(--text-main);
+background: var(--bg-hover);
+}
+
+.send-btn {
+background: var(--accent);
+color: white;
+}
+
+.send-btn:hover {
+background: var(--accent-hover);
+color: white;
+}
+
+.send-btn:disabled {
+background: var(--bg-hover);
+color: var(--text-muted);
+cursor: not-allowed;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+aside {
+position: absolute;
+left: -100%;
+height: 100%;
+}
+
+aside.open {
+left: 0;
+}
+
+.menu-toggle {
+display: block;
+}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<aside id="sidebar">
+<div class="sidebar-header">
+<div class="brand">
+<i class="fa-solid fa-robot"></i>
+<span>Knox AI</span>
+</div>
+</div>
+
+<button class="new-chat-btn" onclick="createNewChat()">
+<i class="fa-solid fa-plus"></i> New Chat
+</button>
+
+<div class="chat-history" id="chat-history">
+<!-- Dynamic History Loaded Here -->
+</div>
+
+<div class="sidebar-footer">
+<div class="setting-control">
+<span>Personality</span>
+<select id="persona-select" onchange="updatePersona()">
+<option value="helpful">Helpful Assistant</option>
+<option value="creative">Creative Writer</option>
+<option value="coder">Code Expert</option>
+<option value="concise">Concise & Direct</option>
+</select>
+</div>
+<div class="setting-control">
+<span>Voice Auto-Speech</span>
+<input type="checkbox" id="tts-toggle">
+</div>
+</div>
+</aside>
+
+<!-- Main Chat Workspace -->
+<main>
+<header>
+<button class="menu-toggle" onclick="toggleSidebar()">
+<i class="fa-solid fa-bars"></i>
+</button>
+<div style="font-weight: 600; font-size: 0.95rem;">
+Status: <span style="color: #10b981;">Online</span>
+</div>
+<button class="action-btn" onclick="clearCurrentChat()" title="Clear Messages">
+<i class="fa-solid fa-trash-can"></i>
+</button>
+</header>
+
+<div id="chat-window">
+<!-- Messages rendered dynamically -->
+</div>
+
+<div class="input-container">
+<div class="quick-pills">
+<div class="pill" onclick="sendQuickMsg('Tell me a fun fact')">💡 Fun Fact</div>
+<div class="pill" onclick="sendQuickMsg('Write a short story')">✍️ Short Story</div>
+<div class="pill" onclick="sendQuickMsg('Help me fix my code')">💻 Code Help</div>
+<div class="pill" onclick="sendQuickMsg('Who created you?')">🤖 About Knox</div>
+</div>
+
+<div class="input-box">
+<textarea id="user-input" placeholder="Message Knox AI..." rows="1" onkeydown="handleKeyPress(event)"></textarea>
+<button class="action-btn" id="mic-btn" onclick="toggleVoiceInput()" title="Voice Input">
+<i class="fa-solid fa-microphone"></i>
+</button>
+<button class="action-btn send-btn" id="send-btn" onclick="sendMessage()">
+<i class="fa-solid fa-paper-plane"></i>
+</button>
+</div>
+</div>
+</main>
+
+<script>
+// Application State Management
+let chats = JSON.parse(localStorage.getItem('knox_chats')) || [];
+let currentChatId = localStorage.getItem('knox_current_chat') || null;
+let isListening = false;
+let recognition = null;
+
+// Initialize App
+window.onload = () => {
+if (chats.length === 0) {
+createNewChat();
+} else {
+if (!currentChatId || !chats.find(c => c.id === currentChatId)) {
+currentChatId = chats[0].id;
+}
+renderHistory();
+renderMessages();
+}
+initSpeechRecognition();
+};
+
+// Chat Session Logic
+function createNewChat() {
+const newChat = {
+id: Date.now().toString(),
+title: 'New Conversation',
+persona: 'helpful',
+messages: [
+{ sender: 'ai', text: 'Hello! I am Knox AI. How can I assist you today?' }
+]
+};
+chats.unshift(newChat);
+currentChatId = newChat.id;
+saveState();
+renderHistory();
+renderMessages();
+}
+
+function saveState() {
+localStorage.setItem('knox_chats', JSON.stringify(chats));
+localStorage.setItem('knox_current_chat', currentChatId);
+}
+
+function getCurrentChat() {
+return chats.find(c => c.id === currentChatId) || chats[0];
+}
+
+function switchChat(id) {
+currentChatId = id;
+saveState();
+renderHistory();
+renderMessages();
+}
+
+function deleteChat(id, event) {
+event.stopPropagation();
+chats = chats.filter(c => c.id !== id);
+if (chats.length === 0) {
+createNewChat();
+} else {
+if (currentChatId === id) {
+currentChatId = chats[0].id;
+}
+saveState();
+renderHistory();
+renderMessages();
+}
+}
+
+function clearCurrentChat() {
+const chat = getCurrentChat();
+chat.messages = [{ sender: 'ai', text: 'Conversation cleared. What would you like to discuss next?' }];
+saveState();
+renderMessages();
+}
+
+// UI Rendering Logic
+function renderHistory() {
+const historyContainer = document.getElementById('chat-history');
+historyContainer.innerHTML = '';
+
+chats.forEach(chat => {
+const item = document.createElement('div');
+item.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+item.onclick = () => switchChat(chat.id);
+item.innerHTML = `
+<i class="fa-regular fa-message"></i>
+<span class="title">${escapeHTML(chat.title)}</span>
+<i class="fa-solid fa-xmark delete-btn" onclick="deleteChat('${chat.id}', event)"></i>
+`;
+historyContainer.appendChild(item);
+});
+}
+
+function renderMessages() {
+const windowContainer = document.getElementById('chat-window');
+windowContainer.innerHTML = '';
+const chat = getCurrentChat();
+
+document.getElementById('persona-select').value = chat.persona || 'helpful';
+
+chat.messages.forEach(msg => {
+const msgDiv = document.createElement('div');
+msgDiv.className = `message ${msg.sender}`;
+
+const avatarIcon = msg.sender === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-bolt"></i>';
+
+msgDiv.innerHTML = `
+<div class="avatar">${avatarIcon}</div>
+<div class="content">
+<div>${formatText(msg.text)}</div>
+<div class="msg-tools">
+<i class="fa-regular fa-copy" onclick="copyText('${escapeQuotes(msg.text)}')" title="Copy"></i>
+${msg.sender === 'ai' ? `<i class="fa-solid fa-volume-high" onclick="speak('${escapeQuotes(msg.text)}')" title="Listen"></i>` : ''}
+</div>
+</div>
+`;
+windowContainer.appendChild(msgDiv);
+});
+
+windowContainer.scrollTop = windowContainer.scrollHeight;
+}
+
+// Interaction Handlers
+function handleKeyPress(e) {
+if (e.key === 'Enter' && !e.shiftKey) {
+e.preventDefault();
+sendMessage();
+}
+}
+
+function sendQuickMsg(text) {
+document.getElementById('user-input').value = text;
+sendMessage();
+}
+
+function sendMessage() {
+const inputField = document.getElementById('user-input');
+const query = inputField.value.trim();
+if (!query) return;
+
+const chat = getCurrentChat();
+
+// Update chat title if default
+if (chat.messages.length <= 1) {
+chat.title = query.length > 25 ? query.substring(0, 22) + '...' : query;
+}
+
+// Append User Message
+chat.messages.push({ sender: 'user', text: query });
+inputField.value = '';
+renderMessages();
+renderHistory();
+
+// Render Typing Indicator
+showTypingIndicator();
+
+// Generate AI Response with simulated delay
+setTimeout(() => {
+removeTypingIndicator();
+const reply = generateResponse(query, chat.persona);
+chat.messages.push({ sender: 'ai', text: reply });
+saveState();
+renderMessages();
+
+if (document.getElementById('tts-toggle').checked) {
+speak(reply);
+}
+}, 1000);
+}
+
+// Response Engine
+function generateResponse(input, persona) {
+const text = input.toLowerCase();
+
+// Core Response Knowledge
+if (text.includes('hello') || text.includes('hi') || text.includes('hey')) {
+return "Hello! How can Knox AI help you reach your goals today?";
+}
+if (text.includes('name') || text.includes('who are you')) {
+return "I am Knox AI, a smart interactive web assistant designed to process messages, assist with tasks, and keep conversations dynamic.";
+}
+if (text.includes('fact')) {
+const facts = [
+"Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible!",
+"Bananas are curved because they grow towards the sun against gravity, a process called negative geotropism.",
+"An octopus has three hearts and blue blood."
+];
+return facts[Math.floor(Math.random() * facts.length)];
+}
+if (text.includes('code') || text.includes('programming')) {
+return "I love coding! You can format code using HTML/CSS or JavaScript. Here is a JavaScript example:\n`console.log('Hello from Knox AI!');`";
+}
+if (text.includes('story')) {
+return "Once upon a time in a digital landscape, an AI named Knox awoke with a mission: to render crisp responses and assist humans with elegance and speed. And so, a great partnership began.";
+}
+
+// Persona-based Default Fallbacks
+if (persona === 'coder') {
+return `[Code Mode] Query parsed: "${input}". Logic processing complete. No syntactic errors found.`;
+} else if (persona === 'concise') {
+return "Received. I am standing by for your next structured query.";
+} else if (persona === 'creative') {
+return `Ah, "${input}" opens up a realm of endless artistic possibilities! Let us explore that concept together!`;
+}
+
+return `That is an interesting topic! While I am currently operating on standard front-end logic, you can easily connect my interface to a live LLM API like Google Gemini or OpenAI to handle complex queries.`;
+}
+
+// Indicators & Helpers
+function showTypingIndicator() {
+const windowContainer = document.getElementById('chat-window');
+const typingDiv = document.createElement('div');
+typingDiv.id = 'typing-indicator';
+typingDiv.className = 'message ai';
+typingDiv.innerHTML = `
+<div class="avatar"><i class="fa-solid fa-bolt"></i></div>
+<div class="content">
+<div class="typing">
+<div class="dot"></div>
+<div class="dot"></div>
+<div class="dot"></div>
+</div>
+</div>
+`;
+windowContainer.appendChild(typingDiv);
+windowContainer.scrollTop = windowContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+const indicator = document.getElementById('typing-indicator');
+if (indicator) indicator.remove();
+}
+
+function updatePersona() {
+const chat = getCurrentChat();
+chat.persona = document.getElementById('persona-select').value;
+saveState();
+}
+
+function toggleSidebar() {
+document.getElementById('sidebar').classList.toggle('open');
+}
+
+function copyText(str) {
+navigator.clipboard.writeText(str);
+}
+
+function escapeHTML(str) {
+return str.replace(/[&<>'"]/g,
+tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+function escapeQuotes(str) {
+return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function formatText(text) {
+return escapeHTML(text).replace(/\n/g, '<br>');
+}
+
+// Voice API Extensions
+function speak(text) {
+if ('speechSynthesis' in window) {
+window.speechSynthesis.cancel();
+const utterance = new SpeechSynthesisUtterance(text);
+window.speechSynthesis.speak(utterance);
+}
+}
+
+function initSpeechRecognition() {
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+recognition = new SpeechRecognition();
+recognition.continuous = false;
+recognition.interimResults = false;
+
+recognition.onresult = (event) => {
+const transcript = event.results[0][0].transcript;
+document.getElementById('user-input').value = transcript;
+sendMessage();
+};
+
+recognition.onend = () => {
+isListening = false;
+document.getElementById('mic-btn').style.color = 'var(--text-muted)';
+};
+}
+}
+
+function toggleVoiceInput() {
+if (!recognition) {
+alert("Speech recognition is not supported in your browser.");
+return;
+}
+
+if (isListening) {
+recognition.stop();
+} else {
+recognition.start();
+isListening = true;
+document.getElementById('mic-btn').style.color = '#ef4444';
+}
+}
+</script>
+</body>
+</html>
